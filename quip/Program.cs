@@ -1,5 +1,6 @@
 ﻿using Gnu.Getopt;
 using libquip;
+using libquip.messages;
 using libquip.threads;
 using libquip.users;
 using System;
@@ -104,6 +105,7 @@ namespace quip
 			try
 			{
 				QuipThread quipThread = new QuipThread(quip.Default.Token);
+				QuipMessage quipMessage = new QuipMessage(quip.Default.Token);
 
 				switch (action)
 				{
@@ -117,17 +119,32 @@ namespace quip
 						var recentDocs = (me == null) ? quipThread.GetRecent(limit) : quipThread.GetRecentByMembers(new string[] { me.id }, limit);
 						foreach (var doc in recentDocs)
 						{
+							bool threadPrinted = false;
+							var thread = doc.Value.thread;
+							var threadMessages = quipMessage.GetMessagesForThread(thread.id);
+
+							// Get thread messages
+							foreach (var message in threadMessages)
+							{
+								if (me != null && action == QuipAction.listMyRecent && message.author_id != me.id)
+								{
+									continue;
+								}
+
+								PrintThreadMessage(message);
+								PrintThread(thread);
+								threadPrinted = true;
+							}
+
 							if (me != null && action == QuipAction.listMyRecent && doc.Value.thread.author_id != me.id)
 							{
 								continue;
 							}
 
-							Console.WriteLine(doc.Value.thread.title);
-							Console.WriteLine("Created: {0}", UnixTimeStampToDateTime(doc.Value.thread.created_usec / 1000000));
-							Console.WriteLine("Modified: {0}", UnixTimeStampToDateTime(doc.Value.thread.updated_usec / 1000000));
-							Console.WriteLine("Id: {0}", doc.Value.thread.id);
-							Console.WriteLine("Link: {0}", doc.Value.thread.link);
-							Console.WriteLine();
+							if (!threadPrinted)
+							{
+								PrintThread(thread);
+							}
 						}
 						break;
 
@@ -140,6 +157,28 @@ namespace quip
 			{
 				Console.Error.WriteLine("An error occurred ({0}, code: {1}): {2}", ex.QuipError.error, ex.QuipError.error_code.ToString(), ex.QuipError.error_description);
 			}
+		}
+
+		private static void PrintThreadMessage(Message message)
+		{
+			Console.WriteLine("*******************************************************************************");
+			Console.WriteLine($"Message from: {message.author_name}");
+			Console.WriteLine("Created: {0}", UnixTimeStampToDateTime(message.created_usec / 1000000));
+			Console.WriteLine("Id: {0}", message.id);
+			Console.WriteLine(message.text);
+			Console.WriteLine("*******************************************************************************");
+			Console.WriteLine();
+		}
+
+		private static void PrintThread(Thread thread)
+		{
+			Console.WriteLine(thread.title);
+			Console.WriteLine("Created: {0}", UnixTimeStampToDateTime(thread.created_usec / 1000000));
+			Console.WriteLine("Modified: {0}", UnixTimeStampToDateTime(thread.updated_usec / 1000000));
+			Console.WriteLine("Id: {0}", thread.id);
+			Console.WriteLine("Link: {0}", thread.link);
+			Console.WriteLine("-------------------------------------------------------------------------------");
+			Console.WriteLine();
 		}
 
 		private static void Usage()
