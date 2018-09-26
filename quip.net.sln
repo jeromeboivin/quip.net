@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "libquip", "libquip\libquip.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "quip", "quip\quip.csproj", "{107DDD24-531C-4C44-8570-46B986410083}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "quipps", "quipps\quipps.csproj", "{E4B299EF-438A-47E7-8E1D-5ED8A29A2DAA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{107DDD24-531C-4C44-8570-46B986410083}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{107DDD24-531C-4C44-8570-46B986410083}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{107DDD24-531C-4C44-8570-46B986410083}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4B299EF-438A-47E7-8E1D-5ED8A29A2DAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4B299EF-438A-47E7-8E1D-5ED8A29A2DAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4B299EF-438A-47E7-8E1D-5ED8A29A2DAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4B299EF-438A-47E7-8E1D-5ED8A29A2DAA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

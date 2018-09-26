@@ -64,6 +64,18 @@ namespace libquip.threads
 			return response.Data;
 		}
 
+		public Document GetThread(string id)
+		{
+			var request = new RestRequest("threads/{id}", Method.GET);
+			request.AddHeader("Authorization", string.Format("Bearer {0}", _token));
+			request.AddUrlSegment("id", id);
+
+			var response = _client.Execute<Document>(request);
+			CheckResponse(response);
+
+			return response.Data;
+		}
+
 		public Dictionary<string, Document> GetRecentByMembers(string[] memberIds, int count = 10)
 		{
 			var request = new RestRequest("threads/recent?count={count}&member_ids={member_ids}", Method.GET);

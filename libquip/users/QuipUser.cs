@@ -34,5 +34,16 @@ namespace libquip.users
 
 			return response.Data;
 		}
+
+		public QuipUsersResponse GetCurrentUser()
+		{
+			var request = new RestRequest("users/current", Method.GET);
+			request.AddHeader("Authorization", string.Format("Bearer {0}", _token));
+
+			var response = _client.Execute<QuipUsersResponse>(request);
+			CheckResponse(response);
+
+			return response.Data;
+		}
 	}
 }

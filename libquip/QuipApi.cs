@@ -2,7 +2,7 @@
 
 namespace libquip
 {
-	public class QuipApi
+	public abstract class QuipApi
 	{
 		protected RestClient _client;
 		protected string _token;
