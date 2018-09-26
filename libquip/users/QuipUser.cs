@@ -45,5 +45,16 @@ namespace libquip.users
 
 			return response.Data;
 		}
+
+		public List<QuipUsersResponse> GetContacts()
+		{
+			var request = new RestRequest("users/contacts", Method.GET);
+			request.AddHeader("Authorization", string.Format("Bearer {0}", _token));
+
+			var response = _client.Execute<List<QuipUsersResponse>>(request);
+			CheckResponse(response);
+
+			return response.Data;
+		}
 	}
 }

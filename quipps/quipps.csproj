@@ -44,9 +44,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GetQuipContactsCmdlet.cs" />
+    <Compile Include="GetRecentMessagesCmdlet.cs" />
     <Compile Include="GetRecentThreadsCmdlet.cs" />
     <Compile Include="GetThreadCmdlet.cs" />
     <Compile Include="GetUserCmdLet.cs" />
+    <Compile Include="NewQuipDocumentCmdlet.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QuipApiCmdlet.cs" />
     <Compile Include="GetQuipFolderCmdlet.cs" />
