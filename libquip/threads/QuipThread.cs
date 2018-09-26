@@ -26,10 +26,10 @@ namespace libquip.threads
 	public class Document
 	{
 		public Thread thread { get; set; }
-		List<string> user_ids { get; set; }
-		List<string> shared_folder_ids { get; set; }
-		List<string> expanded_user_ids { get; set; }
-		List<string> invited_user_emails { get; set; }
+		public List<string> user_ids { get; set; }
+		public List<string> shared_folder_ids { get; set; }
+		public List<string> expanded_user_ids { get; set; }
+		public List<string> invited_user_emails { get; set; }
 		public string html { get; set; }
 	}
 

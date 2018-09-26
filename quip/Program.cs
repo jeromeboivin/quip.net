@@ -1,5 +1,6 @@
 ﻿using Gnu.Getopt;
 using libquip;
+using libquip.folders;
 using libquip.messages;
 using libquip.threads;
 using libquip.users;
@@ -123,6 +124,16 @@ namespace quip
 							var thread = doc.Value.thread;
 							var threadMessages = quipMessage.GetMessagesForThread(thread.id);
 
+							if (doc.Value.shared_folder_ids != null)
+							{
+								foreach (var shared_folder_id in doc.Value.shared_folder_ids)
+								{
+									QuipFolder folder = new QuipFolder(quip.Default.Token);
+									var getFolderResponse = folder.GetFolder(shared_folder_id);
+									PrintFolder(getFolderResponse.folder);
+								}
+							}
+
 							// Get thread messages
 							foreach (var message in threadMessages)
 							{
@@ -157,6 +168,15 @@ namespace quip
 			{
 				Console.Error.WriteLine("An error occurred ({0}, code: {1}): {2}", ex.QuipError.error, ex.QuipError.error_code.ToString(), ex.QuipError.error_description);
 			}
+		}
+
+		private static void PrintFolder(Folder folder)
+		{
+			Console.WriteLine("###############################################################################");
+			Console.WriteLine($"Shared folder: {folder.title}");
+			Console.WriteLine($"Shared folder id: {folder.id}");
+			Console.WriteLine("###############################################################################");
+			Console.WriteLine();
 		}
 
 		private static void PrintThreadMessage(Message message)
