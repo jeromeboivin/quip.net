@@ -49,6 +49,7 @@
     <Compile Include="GetUserCmdLet.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QuipApiCmdlet.cs" />
+    <Compile Include="GetQuipFolderCmdlet.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
