@@ -45,6 +45,16 @@ namespace libquip.threads
 		markdown
 	}
 
+	public enum DocumentLocation
+	{
+		Append,
+		Prepend,
+		AfterSection,
+		BeforeSection,
+		ReplaceSection,
+		DeleteSection
+	}
+
 	public class QuipThread : QuipApi
 	{
 		public QuipThread(string token)
@@ -89,7 +99,7 @@ namespace libquip.threads
 			return response.Data;
 		}
 
-		public Document NewDocument(string title, string content, string[] member_ids = null,  DocumentType type = DocumentType.document, DocumentFormat format = DocumentFormat.html)
+		public Document NewDocument(string title, string content, string[] member_ids = null,  DocumentType type = DocumentType.document, DocumentFormat format = DocumentFormat.markdown)
 		{
 			var request = new RestRequest("threads/new-document", Method.POST);
 			request.AddHeader("Authorization", string.Format("Bearer {0}", _token));
@@ -111,6 +121,42 @@ namespace libquip.threads
 			{
 				request.AddParameter("member_ids", string.Join(",", member_ids));
 			}
+
+			var response = _client.Execute<Document>(request);
+
+			CheckResponse(response);
+
+			return response.Data;
+		}
+
+		public Document EditDocument(string id, string content, string section_id, DocumentFormat format = DocumentFormat.markdown, DocumentLocation location = DocumentLocation.Append)
+		{
+			var request = new RestRequest("threads/edit-document", Method.POST);
+			request.AddHeader("Authorization", string.Format("Bearer {0}", _token));
+			request.AddParameter("thread_id", id);
+
+			if (content != null)
+			{
+				request.AddParameter("content", content);
+			}
+
+			if (section_id != null)
+			{
+				request.AddParameter("section_id", section_id);
+			}
+
+			request.AddParameter("format", format.ToString());
+
+			string[] locations = {
+				"0: APPEND",
+				"1: PREPEND",
+				"2: AFTER_SECTION",
+				"3: BEFORE_SECTION",
+				"4: REPLACE_SECTION",
+				"5: DELETE_SECTION"
+			};
+
+			request.AddParameter("location", locations[(int)location]);
 
 			var response = _client.Execute<Document>(request);
 
