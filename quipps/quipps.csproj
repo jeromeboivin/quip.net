@@ -44,9 +44,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="NewThreadMessageCmdlet.cs" />
     <Compile Include="EditQuipDocumentCmdlet.cs" />
     <Compile Include="GetQuipContactsCmdlet.cs" />
-    <Compile Include="GetRecentMessagesCmdlet.cs" />
+    <Compile Include="GetThreadMessagesCmdlet.cs" />
     <Compile Include="GetRecentThreadsCmdlet.cs" />
     <Compile Include="GetThreadCmdlet.cs" />
     <Compile Include="GetUserCmdLet.cs" />

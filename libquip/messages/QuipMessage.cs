@@ -3,6 +3,13 @@ using System.Collections.Generic;
 
 namespace libquip.messages
 {
+	public enum MessageFrame
+	{
+		bubble,
+		card,
+		line
+	}
+
 	public class Message
 	{
 		public string author_id { get; set; }
@@ -34,6 +41,20 @@ namespace libquip.messages
 			request.AddUrlSegment("thread_id", threadId);
 
 			var response = _client.Execute<List<Message>>(request);
+			CheckResponse(response);
+
+			return response.Data;
+		}
+
+		public Message AddMessageForThread(string threadId, MessageFrame frame, string content)
+		{
+			var request = new RestRequest("messages/new", Method.POST);
+			request.AddHeader("Authorization", string.Format("Bearer {0}", _token));
+			request.AddParameter("thread_id", threadId);
+			request.AddParameter("frame", frame.ToString());
+			request.AddParameter("content", content);
+
+			var response = _client.Execute<Message>(request);
 			CheckResponse(response);
 
 			return response.Data;
