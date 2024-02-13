@@ -14,6 +14,9 @@ Basic Quip API C#/.Net/Powershell wrapper.
 * Get-QuipThread
 Returns the given thread.
 
+* Get-QuipThreadHtml
+Returns the given thread HTML content.
+
 * Get-QuipRecentThreads
 Returns the most recent threads to have received messages, similar to the inbox view in the Quip app.
 
