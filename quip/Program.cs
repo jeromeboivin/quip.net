@@ -16,6 +16,7 @@ namespace quip
 		enum QuipAction
 		{
 			none,
+			getDoc,
 			newDoc,
 			listRecent,
 			listMyRecent
@@ -31,12 +32,13 @@ namespace quip
 			}
 
 			string title = null;
+			string threadId = null;
 			string content = null;
 			string directory = null;
 			QuipAction action = QuipAction.none;
 			int limit = 10;
 
-			LongOpt[] longopts = new LongOpt[9];
+			LongOpt[] longopts = new LongOpt[10];
 			longopts[0] = new LongOpt("help", Argument.No, null, 'h');
 			longopts[1] = new LongOpt("title", Argument.Required, null, 't');
 			longopts[2] = new LongOpt("content", Argument.Required, null, 'c');
@@ -46,8 +48,9 @@ namespace quip
 			longopts[6] = new LongOpt("directory", Argument.Required, null, 'd');
 			longopts[7] = new LongOpt("my", Argument.No, null, 'm');
 			longopts[8] = new LongOpt("limit", Argument.Required, null, 'l');
+			longopts[9] = new LongOpt("get", Argument.Required, null, 'g');
 
-			Getopt g = new Getopt("quip", args, "c:d:f:l:mn?hrt:", longopts);
+			Getopt g = new Getopt("quip", args, "c:d:f:g:l:mn?hrt:", longopts);
 
 			int c;
 			while ((c = g.getopt()) != -1)
@@ -66,10 +69,15 @@ namespace quip
 						content = (File.Exists(g.Optarg)) ? File.ReadAllText(g.Optarg) : string.Empty;
 						break;
 
+					case 'g':
+						threadId = g.Optarg;
+						action = QuipAction.getDoc;
+						break;
+
 					case 'l':
 						if (!string.IsNullOrEmpty(g.Optarg))
 						{
-							Int32.TryParse(g.Optarg, out limit);
+							int.TryParse(g.Optarg, out limit);
 						}
 						break;
 
@@ -110,6 +118,11 @@ namespace quip
 
 				switch (action)
 				{
+					case QuipAction.getDoc:
+						var threadObj = quipThread.GetThread(threadId);
+						Console.WriteLine(threadObj.html);
+						break;
+
 					case QuipAction.newDoc:
 						var document = quipThread.NewDocument(title, content, (directory != null) ? new string[] { directory } : null, DocumentType.document, DocumentFormat.markdown);
 						Console.WriteLine(document.thread.link);
@@ -212,6 +225,9 @@ namespace quip
 			Console.Error.WriteLine("quip.exe -n/--new -t/--title <title> -c/--content <content> [-d/--directory <destination dir>]");
 			Console.Error.WriteLine("quip.exe -n/--new -t/--title <title> -f/--file <input.md> [-d/--directory <destination dir>]");
 			Console.Error.WriteLine("\tCreates a document or spreadsheet.");
+			Console.Error.WriteLine();
+			Console.Error.WriteLine("quip.exe -g/--get <thread id>");
+			Console.Error.WriteLine("\tGets the content of a thread in HTML format.");
 		}
 
 		private static DateTime UnixTimeStampToDateTime(long unixTimeStamp)
