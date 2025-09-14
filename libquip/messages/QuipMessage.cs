@@ -29,8 +29,32 @@ namespace libquip.messages
 
 	public class QuipMessage : QuipApi
 	{
+		/// <summary>
+		/// Initializes a new instance of the QuipMessage class with API version 1 (default)
+		/// </summary>
+		/// <param name="token">The authentication token</param>
 		public QuipMessage(string token)
-			: base(token)
+			: base(token, QuipApiVersion.V1)
+		{
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the QuipMessage class with the specified API version
+		/// </summary>
+		/// <param name="token">The authentication token</param>
+		/// <param name="version">The API version to use</param>
+		public QuipMessage(string token, QuipApiVersion version)
+			: base(token, version)
+		{
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the QuipMessage class with the specified API version (integer)
+		/// </summary>
+		/// <param name="token">The authentication token</param>
+		/// <param name="version">The API version to use (1 or 2)</param>
+		public QuipMessage(string token, int version)
+			: base(token, version)
 		{
 		}
 
@@ -40,8 +64,7 @@ namespace libquip.messages
 			request.AddHeader("Authorization", string.Format("Bearer {0}", _token));
 			request.AddUrlSegment("thread_id", threadId);
 
-			var response = _client.Execute<List<Message>>(request);
-			CheckResponse(response);
+			var response = ExecuteWithRateLimiting<List<Message>>(request);
 
 			return response.Data;
 		}
@@ -54,8 +77,7 @@ namespace libquip.messages
 			request.AddParameter("frame", frame.ToString());
 			request.AddParameter("content", content);
 
-			var response = _client.Execute<Message>(request);
-			CheckResponse(response);
+			var response = ExecuteWithRateLimiting<Message>(request);
 
 			return response.Data;
 		}

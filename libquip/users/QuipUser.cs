@@ -19,8 +19,32 @@ namespace libquip.users
 
 	public class QuipUser : QuipApi
 	{
+		/// <summary>
+		/// Initializes a new instance of the QuipUser class with API version 1 (default)
+		/// </summary>
+		/// <param name="token">The authentication token</param>
 		public QuipUser(string token)
-			: base(token)
+			: base(token, QuipApiVersion.V1)
+		{
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the QuipUser class with the specified API version
+		/// </summary>
+		/// <param name="token">The authentication token</param>
+		/// <param name="version">The API version to use</param>
+		public QuipUser(string token, QuipApiVersion version)
+			: base(token, version)
+		{
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the QuipUser class with the specified API version (integer)
+		/// </summary>
+		/// <param name="token">The authentication token</param>
+		/// <param name="version">The API version to use (1 or 2)</param>
+		public QuipUser(string token, int version)
+			: base(token, version)
 		{
 		}
 
@@ -29,8 +53,7 @@ namespace libquip.users
 			var request = new RestRequest("users/" + id, Method.GET);
 			request.AddHeader("Authorization", string.Format("Bearer {0}", _token));
 
-			var response = _client.Execute<QuipUsersResponse>(request);
-			CheckResponse(response);
+			var response = ExecuteWithRateLimiting<QuipUsersResponse>(request);
 
 			return response.Data;
 		}
@@ -40,8 +63,7 @@ namespace libquip.users
 			var request = new RestRequest("users/current", Method.GET);
 			request.AddHeader("Authorization", string.Format("Bearer {0}", _token));
 
-			var response = _client.Execute<QuipUsersResponse>(request);
-			CheckResponse(response);
+			var response = ExecuteWithRateLimiting<QuipUsersResponse>(request);
 
 			return response.Data;
 		}
@@ -51,8 +73,7 @@ namespace libquip.users
 			var request = new RestRequest("users/contacts", Method.GET);
 			request.AddHeader("Authorization", string.Format("Bearer {0}", _token));
 
-			var response = _client.Execute<List<QuipUsersResponse>>(request);
-			CheckResponse(response);
+			var response = ExecuteWithRateLimiting<List<QuipUsersResponse>>(request);
 
 			return response.Data;
 		}

@@ -29,7 +29,29 @@ namespace libquip.folders
 
 	public class QuipFolder : QuipApi
 	{
-		public QuipFolder(string token) : base(token)
+		/// <summary>
+		/// Initializes a new instance of the QuipFolder class with API version 1 (default)
+		/// </summary>
+		/// <param name="token">The authentication token</param>
+		public QuipFolder(string token) : base(token, QuipApiVersion.V1)
+		{
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the QuipFolder class with the specified API version
+		/// </summary>
+		/// <param name="token">The authentication token</param>
+		/// <param name="version">The API version to use</param>
+		public QuipFolder(string token, QuipApiVersion version) : base(token, version)
+		{
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the QuipFolder class with the specified API version (integer)
+		/// </summary>
+		/// <param name="token">The authentication token</param>
+		/// <param name="version">The API version to use (1 or 2)</param>
+		public QuipFolder(string token, int version) : base(token, version)
 		{
 		}
 
@@ -38,8 +60,7 @@ namespace libquip.folders
 			var request = new RestRequest("folders/" + id, Method.GET);
 			request.AddHeader("Authorization", string.Format("Bearer {0}", _token));
 
-			var response = _client.Execute<QuipFoldersResponse>(request);
-			CheckResponse(response);
+			var response = ExecuteWithRateLimiting<QuipFoldersResponse>(request);
 
 			return response.Data;
 		}

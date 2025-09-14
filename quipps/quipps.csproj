@@ -57,7 +57,14 @@
     <Compile Include="GetQuipFolderCmdlet.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Examples\Get-QuipThreadHtmlV2-Examples.ps1" />
+    <None Include="Examples\Get-QuipThreadV2-Examples.ps1" />
+    <None Include="Get-QuipThreadHtmlV2-Default-Behavior-Change.md" />
+    <None Include="Get-QuipThreadHtmlV2-Help.md" />
+    <None Include="Get-QuipThreadV2-Help.md" />
+    <None Include="Get-QuipThreadV2-Implementation-Summary.md" />
     <None Include="packages.config" />
+    <None Include="V1-vs-V2-Cmdlet-Comparison.md" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libquip\libquip.csproj">

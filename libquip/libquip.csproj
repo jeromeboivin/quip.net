@@ -47,17 +47,28 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Examples\ApiVersionExamples.cs" />
+    <Compile Include="Examples\GetThreadHtmlV2Demo.cs" />
+    <Compile Include="Examples\GetThreadV2Demo.cs" />
+    <Compile Include="Examples\RateLimitingDemo.cs" />
     <Compile Include="folders\QuipFolder.cs" />
     <Compile Include="messages\QuipMessage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QuipApi.cs" />
     <Compile Include="QuipError.cs" />
     <Compile Include="QuipException.cs" />
+    <Compile Include="RateLimiting\ApiRateLimit.cs" />
+    <Compile Include="RateLimiting\QuipRateLimitManager.cs" />
     <Compile Include="threads\QuipThread.cs" />
     <Compile Include="users\QuipUser.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="API_VERSION_REFACTORING.md" />
     <None Include="packages.config" />
+    <None Include="RATE_LIMITING_GUIDE.md" />
+    <None Include="V2_GET_THREAD_HTML_GUIDE.md" />
+    <None Include="V2_GET_THREAD_HTML_IMPLEMENTATION_SUMMARY.md" />
+    <None Include="V2_GET_THREAD_USAGE_GUIDE.md" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
