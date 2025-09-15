@@ -52,8 +52,128 @@ param(
 
     [Parameter(Mandatory=$false)]
     # Only download documents created or modified within the last N months
-    [int]$RecentMonths
+    [int]$RecentMonths,
+
+    [Parameter(Mandatory=$false)]
+    # Path to the progress file (optional, defaults to progress.json in LocalFolderPath)
+    [string]$ProgressFilePath
 )
+
+# Initialize progress tracking
+if (-not $ProgressFilePath) {
+    $ProgressFilePath = Join-Path -Path $LocalFolderPath -ChildPath "quip_download_progress.json"
+}
+
+# Progress tracking structure
+$script:ProgressData = @{
+    LastRun = (Get-Date).ToString('o')
+    RecentMonthsFilter = $RecentMonths
+    ProcessedThreads = @{}  # ThreadId -> @{ IsRecent = $true/$false; LastChecked = DateTime; Downloaded = $true/$false }
+    ProcessedFolders = @{}  # FolderId -> @{ LastProcessed = DateTime; ChildCount = int }
+}
+
+# Load existing progress if file exists
+function Load-Progress {
+    if (Test-Path $ProgressFilePath) {
+        try {
+            $existingProgress = Get-Content $ProgressFilePath -Raw | ConvertFrom-Json
+            
+            # Convert hashtables back from PSCustomObject
+            if ($existingProgress.ProcessedThreads) {
+                $script:ProgressData.ProcessedThreads = @{}
+                $existingProgress.ProcessedThreads.PSObject.Properties | ForEach-Object {
+                    $script:ProgressData.ProcessedThreads[$_.Name] = @{
+                        IsRecent = $_.Value.IsRecent
+                        LastChecked = [DateTime]$_.Value.LastChecked
+                        Downloaded = $_.Value.Downloaded
+                    }
+                }
+            }
+            
+            if ($existingProgress.ProcessedFolders) {
+                $script:ProgressData.ProcessedFolders = @{}
+                $existingProgress.ProcessedFolders.PSObject.Properties | ForEach-Object {
+                    $script:ProgressData.ProcessedFolders[$_.Name] = @{
+                        LastProcessed = [DateTime]$_.Value.LastProcessed
+                        ChildCount = $_.Value.ChildCount
+                    }
+                }
+            }
+            
+            # Update filter info
+            $script:ProgressData.RecentMonthsFilter = $RecentMonths
+            
+            Write-Host "Loaded existing progress from $ProgressFilePath"
+            Write-Host "Previous run processed $($script:ProgressData.ProcessedThreads.Count) threads and $($script:ProgressData.ProcessedFolders.Count) folders"
+        }
+        catch {
+            Write-Warning "Could not load existing progress file: $($_.Exception.Message). Starting fresh."
+        }
+    }
+}
+
+# Save progress to JSON file
+function Save-Progress {
+    try {
+        # Ensure directory exists
+        $progressDir = Split-Path $ProgressFilePath -Parent
+        if (-not (Test-Path $progressDir)) {
+            New-Item -ItemType Directory -Force -Path $progressDir | Out-Null
+        }
+        
+        $script:ProgressData.LastRun = (Get-Date).ToString('o')
+        $progressJson = $script:ProgressData | ConvertTo-Json -Depth 5
+        Set-Content -Path $ProgressFilePath -Value $progressJson -Encoding UTF8
+        Write-Host "Progress saved to $ProgressFilePath"
+    }
+    catch {
+        Write-Warning "Could not save progress: $($_.Exception.Message)"
+    }
+}
+
+# Check if we should skip a thread based on progress data
+function Should-SkipThread {
+    param (
+        [string]$ThreadId,
+        [DateTime]$CutoffDate
+    )
+    
+    # If no recent filter is applied, don't skip based on recency
+    if ($CutoffDate -eq [DateTime]::MinValue) {
+        return $false
+    }
+    
+    # Check if we have cached information about this thread
+    if ($script:ProgressData.ProcessedThreads.ContainsKey($ThreadId)) {
+        $threadInfo = $script:ProgressData.ProcessedThreads[$ThreadId]
+        
+        # If we checked this thread recently (within last 24 hours) and it wasn't recent, skip it
+        $lastChecked = $threadInfo.LastChecked
+        $hoursSinceCheck = ((Get-Date) - $lastChecked).TotalHours
+        
+        if ($hoursSinceCheck -lt 24 -and -not $threadInfo.IsRecent) {
+            Write-Host "Skipping thread $ThreadId (cached as not recent, checked $([math]::Round($hoursSinceCheck, 1)) hours ago)"
+            return $true
+        }
+    }
+    
+    return $false
+}
+
+# Update progress data for a thread
+function Update-ThreadProgress {
+    param (
+        [string]$ThreadId,
+        [bool]$IsRecent,
+        [bool]$Downloaded = $false
+    )
+    
+    $script:ProgressData.ProcessedThreads[$ThreadId] = @{
+        IsRecent = $IsRecent
+        LastChecked = (Get-Date)
+        Downloaded = $Downloaded
+    }
+}
 
 # Function to check if a thread was created or modified recently
 function Test-IsRecentThread {
@@ -62,7 +182,12 @@ function Test-IsRecentThread {
         [DateTime]$CutoffDate
     )
 
-    $maxTry = 10
+    # Check if we should skip this thread based on cached data
+    if (Should-SkipThread -ThreadId $ThreadId -CutoffDate $CutoffDate) {
+        return $false
+    }
+
+    $maxTry = 60
     $retryCount = 0
     
     while ($retryCount -lt $maxTry) {
@@ -71,8 +196,13 @@ function Test-IsRecentThread {
             $createdDate = [DateTimeOffset]::FromUnixTimeSeconds($thread.created_usec / 1000000).DateTime
             $updatedDate = [DateTimeOffset]::FromUnixTimeSeconds($thread.updated_usec / 1000000).DateTime
             
-            # Return true if either created or updated date is after cutoff
-            return ($createdDate -gt $CutoffDate) -or ($updatedDate -gt $CutoffDate)
+            # Determine if thread is recent
+            $isRecent = ($createdDate -gt $CutoffDate) -or ($updatedDate -gt $CutoffDate)
+            
+            # Update progress tracking
+            Update-ThreadProgress -ThreadId $ThreadId -IsRecent $isRecent
+            
+            return $isRecent
         }
         catch {
             # if exception message includes rate limit indicators, wait for 60 seconds and retry
@@ -83,7 +213,7 @@ function Test-IsRecentThread {
             }
             else {
                 Write-Warning "Could not retrieve thread metadata for $ThreadId : $($_.Exception.Message)"
-                # If we can't get metadata, include the document to be safe
+                # If we can't get metadata, include the document to be safe but don't cache the result
                 return $true
             }
         }
@@ -104,7 +234,7 @@ function Get-QuipDocumentsRecursive {
         [DateTime]$CutoffDate = [DateTime]::MinValue
     )
 
-    $maxTry = 10
+    $maxTry = 60
 
     # Get folder information
     $retryCount = 0
@@ -130,6 +260,12 @@ function Get-QuipDocumentsRecursive {
     if ($retryCount -eq $maxTry) {
         Write-Host "Maximum retry attempts reached. Unable to retrieve folder information."
         return
+    }
+
+    # Update folder progress
+    $script:ProgressData.ProcessedFolders[$FolderId] = @{
+        LastProcessed = (Get-Date)
+        ChildCount = if ($folder.children) { $folder.children.Count } else { 0 }
     }
 
     # Check if the folder is not empty
@@ -188,6 +324,8 @@ function Get-QuipDocumentsRecursive {
                 # Check if the file already exists and overwrite is not enabled
                 if (-not $Overwrite -and (Test-Path $documentPath)) {
                     Write-Host "Document already exists: $documentTitle"
+                    # Update progress to mark as downloaded
+                    Update-ThreadProgress -ThreadId $documentId -IsRecent $true -Downloaded $true
                     continue
                 }
 
@@ -223,6 +361,9 @@ function Get-QuipDocumentsRecursive {
                         # Use Set-Content instead of Out-File to avoid wildcard issues
                         Set-Content -Path $documentPath -Value $documentHtml -Encoding UTF8
                         Write-Host "Downloaded document: $documentTitle ($documentId)"
+                        
+                        # Update progress to mark as downloaded
+                        Update-ThreadProgress -ThreadId $documentId -IsRecent $true -Downloaded $true
                     }
                     catch {
                         Write-Error "Failed to save document $documentId to $documentPath : $($_.Exception.Message)"
@@ -235,7 +376,13 @@ function Get-QuipDocumentsRecursive {
             }
         }
     }
+    
+    # Periodically save progress (every folder)
+    Save-Progress
 }
+
+# Load existing progress
+Load-Progress
 
 # Calculate cutoff date if RecentMonths parameter is provided
 $cutoffDate = [DateTime]::MinValue
@@ -247,6 +394,7 @@ if ($PSBoundParameters.ContainsKey('RecentMonths') -and $RecentMonths -gt 0) {
 Write-Host "Starting download of Quip documents..."
 Write-Host "Root Folder ID: $RootFolderId"
 Write-Host "Local Path: $LocalFolderPath"
+Write-Host "Progress File: $ProgressFilePath"
 Write-Host "Overwrite: $Overwrite"
 if ($cutoffDate -ne [DateTime]::MinValue) {
     Write-Host "Recent filter: Last $RecentMonths months"
@@ -255,4 +403,8 @@ if ($cutoffDate -ne [DateTime]::MinValue) {
 # Call the function to start downloading documents recursively
 Get-QuipDocumentsRecursive -FolderId $RootFolderId -LocalPath $LocalFolderPath -CutoffDate $cutoffDate
 
+# Save final progress
+Save-Progress
+
 Write-Host "All Quip documents downloaded and stored in $LocalFolderPath"
+Write-Host "Progress tracking saved to $ProgressFilePath"
